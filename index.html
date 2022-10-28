@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/styles.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	</head>
+
+	<body>
+		<div class="container">
+			<h1 style="text-align:center; color:white;">Knowledge System</h1><br><br>
+			
+			<div class="clearfix">
+				<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for documents..." title="Type in a name">
+				<button type="button" class="btn btn-primary float-right" onclick="createDoc()">Create Document</button>
+			</div>
+
+			<ul id="myUL">
+			</ul>
+		</div>
+			
+		<script>
+			$('input').on('keypress', function (event) {
+				var regex = new RegExp("^[a-zA-Z0-9 ]+$");
+				var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
+				if (!regex.test(key)) {
+					event.preventDefault();
+					return false;
+				}
+			});
+		
+			var data_array = [];
+			$.ajax({
+				type: "GET",
+				url: "upload.php",
+				crossDomain: true,
+				cache: false,
+				success: function(data) {
+					data = JSON.parse(data);
+					data_array = [...data.files];
+					var completelist= document.getElementById("myUL");
+					for (var i = 0; i < data_array.length; i++) {
+						var item = data_array[i]["name"].replace(".txt", "");
+						var mdate = data_array[i]["date_modified"];
+						completelist.innerHTML += "<li><a id=" + item.replace(/ /g, "_") + " href='#'><span id=" + item.replace(/ /g, "_") + ">" + item + "</span><div class='float-right'><span id=" + item.replace(/ /g, "_") + " style='font-weight:lighter;font-size:14px'>" + mdate + "</span><button id=" + item.replace(/ /g, "_") + " class='btn btn-danger' style='margin-left:10px;' onclick='deleteFile(this.id)'>Delete</button><button id=" + item.replace(/ /g, "_") + " class='btn btn-secondary' style='margin-left:5px;' onclick='editFile(this.id)'>Edit</button></div></a></li>";
+					}
+				}
+			});
+			
+			document.getElementById("myUL").addEventListener("click",function(e) {
+				if(e.target && (e.target.nodeName == "LI" || e.target.nodeName == "A" || e.target.nodeName == "SPAN")) {
+					var url = "viewer.html?name=" + e.target.id;
+					window.location.href = url;
+				}
+			});
+			
+			function myFunction() {
+				var input, filter, ul, li, a, i, txtValue;
+				input = document.getElementById("myInput");
+				filter = input.value.toUpperCase();
+				ul = document.getElementById("myUL");
+				
+				li = ul.getElementsByTagName("li");
+				for (i = 0; i < li.length; i++) {
+					a = li[i].getElementsByTagName("a")[0];
+					span = a.getElementsByTagName("span")[0]
+					txtValue = span.textContent || span.innerText;
+					if (txtValue.toUpperCase().indexOf(filter) > -1) {
+						li[i].style.display = "";
+					} else {
+						li[i].style.display = "none";
+					}
+				}
+			}
+			
+			function createDoc() {
+				window.location.href = "doc.html";
+			}
+			
+			function deleteFile(id) {
+				if(confirm("You are about to delete your document. Deleted documents cannot be retrieved.")) {
+					$.ajax({
+						type: "POST",
+						url: "upload.php",
+						crossDomain: true,
+						cache: false,
+						data: {
+							name: id.replace(/_/g, " ")
+						},
+						success: function(data) {
+							location.reload();
+						}
+					});
+				}
+			}
+			
+			function editFile(id) {
+				var url = "doc.html?name=" + id;
+				window.location.href = url;
+			}
+		</script>
+
+	</body>
+
+</html>

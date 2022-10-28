@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="robots" content="noindex, nofollow">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/styles.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+		<script src="https://cdn.ckeditor.com/4.20.0/standard-all/ckeditor.js"></script>
+		<title>F</title>
+	</head>	
+	
+	<body>
+		<form>
+			<div class="container">
+				<br><br>
+				<label for="title" style="color:white">Title:</label>
+				<input type="text" id="title" name="title" size="70" required><br><br>
+				<textarea cols="100" id="editor1" name="editor1" class="editor1" rows="10"></textarea>
+				<br>
+				<input onclick="SaveFile()" type="button" name="submit-btn" value="Save" style="float:right">
+				<script>
+					var queryString = new Array();
+					var oldTitle = "";
+					$('input').on('keypress', function (event) {
+						var regex = new RegExp("^[a-zA-Z0-9 ]+$");
+						var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
+						if (!regex.test(key)) {
+							event.preventDefault();
+							return false;
+						}
+					});
+				
+					//let CKEDITOR;
+					//ClassicEditor
+					//		.create( document.querySelector( '#editor1' ) )
+					//		.then( editor => {
+					//				CKEDITOR = editor;
+					//				console.log( editor );
+					//		} )
+					//		.catch( error => {
+					//				console.error( error );
+					//		} );
+					CKEDITOR.replace('editor1', {
+						fullPage: true,
+						extraPlugins: 'docprops',
+						allowedContent: true,
+						height: 320,
+						removeButtons: 'PasteFromWord'
+					});
+					
+					function SaveFile() {
+						if(document.getElementById('title').value != ""){
+							var userInput = CKEDITOR.instances.editor1.getData();
+							var title = document.getElementById("title").value;
+							var heading = "<h1 style='text-align:center'>" + title + "</h1><br><br>";
+							userInput = userInput.replace("<body>", "<body>" + heading);
+							
+							$.ajax({
+								type: "POST",
+								url: "upload.php",
+								crossDomain: true,
+								data: {
+									new_title: title,
+									content: userInput,
+									old_title: oldTitle
+								},
+								cache: false,
+								success: function(data) {
+									var data_array = $.parseJSON(data);
+									var message = data_array['message'];
+									
+									if(message != "title exists"){
+										alert("Document created!");
+										document.getElementById("title").value = "";
+										CKEDITOR.instances.editor1.setData("");
+										window.location.href = "index.html";
+									}else{
+										alert(message);
+									}
+								}
+							});
+						}
+					}
+					
+					$(function () {
+						if (queryString.length == 0) {
+							if (window.location.search.split('?').length > 1) {
+								var params = window.location.search.split('?')[1].split('&');
+								for (var i = 0; i < params.length; i++) {
+									var key = params[i].split('=')[0];
+									var value = decodeURIComponent(params[i].split('=')[1]);
+									queryString[key] = value;
+								}
+							}
+						}
+						if (queryString["name"] != null) {
+							oldTitle = queryString["name"].replace(/_/g, " ");
+							$.ajax({
+								type: "GET",
+								url: "upload.php",
+								crossDomain: true,
+								cache: false,
+								data: {
+									name: queryString["name"].replace(/_/g, " ")
+								},
+								success: function(response) {
+									var title = response.substring(
+										response.lastIndexOf("<h1 style='text-align:center'>") + 30, 
+										response.indexOf("</h1>")
+									);
+									document.getElementById("title").value = title;
+									response = response.replace("<body><h1 style='text-align:center'>" + title + "</h1><br><br>", "<body>");
+									CKEDITOR.instances.editor1.setData(response);
+								}
+							});
+						}
+					});
+				</script>
+			</div>
+		</form>
+	</body>
+	
+</html>
