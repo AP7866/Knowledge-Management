@@ -14,7 +14,7 @@
 					exit;
 				}
 			}
-			
+			 
 			if( $_POST["old_title"] != "" ){
 				rename("docs/" . $_POST['old_title'] . ".txt", $name);
 			}
